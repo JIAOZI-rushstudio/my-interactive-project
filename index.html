@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="寒武纪科普装置" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>寒武纪海洋巨型生物科普装置</title>
+  <style>
+    :root {
+      --bg: #020617;
+      --panel: rgba(15, 23, 42, 0.62);
+      --panel-strong: rgba(15, 23, 42, 0.88);
+      --line: rgba(255, 255, 255, 0.11);
+      --muted: rgba(255, 255, 255, 0.58);
+      --text: #f8fafc;
+      --amber: #fbbf24;
+      --indigo: #818cf8;
+      --radius: 28px;
+      --inner: 20px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; height: 100dvh; }
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "PingFang SC", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    button, input, select { font-family: inherit; }
+    button { cursor: pointer; }
+    button:disabled { cursor: not-allowed; }
+
+    .bg-mesh {
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(circle at 12% 12%, rgba(99, 102, 241, 0.22), transparent 34%),
+        radial-gradient(circle at 82% 70%, rgba(245, 158, 11, 0.14), transparent 32%),
+        radial-gradient(circle at 48% 45%, rgba(14, 165, 233, 0.11), transparent 28%),
+        #020617;
+      z-index: 0;
+    }
+
+    .scan {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      opacity: 0.16;
+      background-image: repeating-linear-gradient(to right, transparent, transparent 1px, rgba(255,255,255,0.03) 1px, rgba(255,255,255,0.03) 3px);
+    }
+
+    .app {
+      position: relative;
+      z-index: 2;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+    }
+
+    .topbar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 30;
+      padding: clamp(18px, 3vh, 28px) clamp(20px, 3vw, 34px);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 24px;
+      pointer-events: none;
+    }
+
+    .title h1 {
+      margin: 0;
+      font-size: clamp(22px, 2.1vw, 34px);
+      font-weight: 300;
+      letter-spacing: 0.16em;
+      line-height: 1.45;
+    }
+
+    .title p {
+      margin: 2px 0 0;
+      color: var(--muted);
+      font-size: clamp(10px, 0.95vw, 14px);
+      letter-spacing: 0.15em;
+      line-height: 1.7;
+    }
+
+    .glass {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.42);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+    }
+
+    .pill-btn {
+      pointer-events: auto;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.05);
+      color: rgba(255,255,255,0.72);
+      border-radius: 999px;
+      padding: 12px 18px;
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      transition: 0.2s ease;
+      letter-spacing: 0.22em;
+      font-size: 10px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .pill-btn:hover { color: white; background: rgba(255,255,255,0.12); }
+
+    .icon {
+      width: 18px;
+      height: 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      vertical-align: middle;
+      flex: 0 0 auto;
+    }
+    .icon svg { width: 100%; height: 100%; }
+
+    .screen {
+      width: 100%;
+      height: 100%;
+      display: none;
+      position: relative;
+      z-index: 5;
+    }
+
+    .screen.active { display: block; }
+
+    .draw-screen {
+      height: 100%;
+      padding: clamp(118px, 18vh, 168px) clamp(16px, 3vw, 34px) clamp(18px, 4vh, 34px);
+    }
+
+    .draw-wrap {
+      height: 100%;
+      min-height: 0;
+      display: grid;
+      grid-template-rows: minmax(0, 1fr) auto;
+      align-items: center;
+      justify-items: center;
+      gap: clamp(12px, 2.5vh, 24px);
+    }
+
+    .canvas-frame {
+      width: min(760px, 82vw, calc((100vh - clamp(118px, 18vh, 168px) - 118px) * 16 / 9));
+      max-width: 100%;
+      max-height: calc(100vh - clamp(118px, 18vh, 168px) - 118px);
+      aspect-ratio: 16 / 9;
+      padding: clamp(8px, 1.4vw, 12px);
+    }
+
+    .canvas-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: var(--inner);
+      overflow: hidden;
+      background: #f8fafc;
+      box-shadow: inset 0 0 26px rgba(15,23,42,0.16);
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      touch-action: none;
+      cursor: crosshair;
+    }
+
+    .generating-overlay {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 18px;
+      background: rgba(241,245,249,0.68);
+      backdrop-filter: blur(10px);
+      color: #111827;
+      text-align: center;
+    }
+
+    .generating .generating-overlay { display: flex; }
+    .generating canvas { opacity: 0.35; filter: blur(6px) grayscale(0.5); }
+
+    .sparkle-ring {
+      width: 78px;
+      height: 78px;
+      border-radius: 999px;
+      border: 1px solid rgba(99,102,241,0.28);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: pulse 1.5s ease-in-out infinite;
+      color: #4f46e5;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 0.9; }
+      50% { transform: scale(1.08); opacity: 0.55; }
+    }
+
+    .toolbar {
+      margin-top: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(6px, 1vw, 10px);
+      padding: clamp(8px, 1.3vh, 12px) clamp(10px, 1.5vw, 14px);
+      border-radius: 999px;
+      max-width: calc(100vw - 28px);
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .toolbar::-webkit-scrollbar { display: none; }
+
+    .tool-btn {
+      width: clamp(38px, 5.2vh, 44px);
+      height: clamp(38px, 5.2vh, 44px);
+      border-radius: 999px;
+      border: 0;
+      background: transparent;
+      color: rgba(255,255,255,0.78);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: 0.2s ease;
+    }
+
+    .tool-btn:hover { background: rgba(255,255,255,0.1); color: white; }
+    .tool-btn.active {
+      background: white;
+      color: #0f172a;
+      box-shadow: 0 0 18px rgba(255,255,255,0.18);
+    }
+
+    .divider { width: 1px; height: 24px; background: rgba(255,255,255,0.12); margin: 0 2px; }
+
+    .generate-btn {
+      min-width: clamp(98px, 14vw, 116px);
+      height: clamp(38px, 5.2vh, 44px);
+      border: 0;
+      border-radius: 999px;
+      background: #6366f1;
+      color: white;
+      padding: 0 24px;
+      font-size: 12px;
+      letter-spacing: 0.16em;
+      font-weight: 700;
+      transition: 0.2s ease;
+    }
+
+    .generate-btn:hover { background: #818cf8; transform: translateY(-1px); }
+    .generate-btn:disabled {
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.42);
+      transform: none;
+    }
+
+    .results-screen {
+      height: 100%;
+      padding: clamp(110px, 16vh, 126px) clamp(18px, 3vw, 34px) clamp(18px, 3vh, 28px);
+    }
+
+    .results-grid {
+      height: 100%;
+      display: grid;
+      grid-template-columns: minmax(420px, 52%) minmax(380px, 48%);
+      gap: clamp(18px, 2.5vw, 28px);
+      align-items: stretch;
+    }
+
+    .left-panel {
+      height: 100%;
+      overflow-y: auto;
+      padding-right: 8px;
+    }
+
+    .left-panel::-webkit-scrollbar { width: 5px; }
+    .left-panel::-webkit-scrollbar-track { background: transparent; }
+    .left-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.22); border-radius: 999px; }
+
+    .back-btn {
+      border: 0;
+      background: transparent;
+      color: rgba(255,255,255,0.58);
+      font-size: 12px;
+      letter-spacing: 0.16em;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 16px;
+      padding: 0;
+    }
+    .back-btn:hover { color: white; }
+
+    .summary-card {
+      padding: 26px;
+      margin-bottom: 18px;
+      overflow: hidden;
+    }
+
+    .summary-row {
+      display: grid;
+      grid-template-columns: 240px 1px minmax(0, 1fr);
+      gap: 24px;
+      align-items: stretch;
+    }
+
+    .score-number {
+      font-family: Georgia, serif;
+      font-size: 132px;
+      line-height: 0.95;
+      font-weight: 300;
+      letter-spacing: -0.06em;
+    }
+
+    .score-number span { font-size: 40px; letter-spacing: 0; }
+    .score-caption { margin-top: 12px; color: #a5b4fc; font-size: 11px; letter-spacing: 0.2em; line-height: 1.7; }
+    .vertical-line { background: rgba(255,255,255,0.1); }
+
+    .summary-card h2 {
+      margin: 0 0 4px;
+      font-size: clamp(24px, 2.2vw, 34px);
+      font-weight: 300;
+      letter-spacing: 0.16em;
+      line-height: 1.55;
+      overflow-wrap: anywhere;
+    }
+
+    .summary-card .latin {
+      color: rgba(255,255,255,0.42);
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      font-style: italic;
+      text-transform: none;
+      line-height: 1.8;
+      margin-bottom: 12px;
+    }
+
+    .summary-card .conclusion {
+      color: rgba(255,255,255,0.78);
+      font-size: 14px;
+      line-height: 2;
+      margin: 0;
+    }
+
+    .species-grid {
+      padding: 18px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 0;
+    }
+
+    .species-card {
+      min-height: 172px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background:
+        linear-gradient(180deg, rgba(30,41,59,0.56), rgba(15,23,42,0.82)),
+        radial-gradient(circle at 50% 36%, rgba(255,255,255,0.15), transparent 58%);
+      border-radius: 22px;
+      padding: 18px;
+      color: white;
+      text-align: left;
+      transition: 0.2s ease;
+    }
+
+    .species-card:hover { border-color: rgba(251,191,36,0.42); transform: translateY(-1px); }
+
+    .species-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+
+    .species-card h3 {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.6;
+      letter-spacing: 0.14em;
+      word-break: keep-all;
+    }
+
+    .species-card .small-latin {
+      color: rgba(255,255,255,0.42);
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      font-style: italic;
+      line-height: 1.6;
+      text-transform: none;
+      margin-top: 2px;
+    }
+
+    .species-score {
+      flex: 0 0 auto;
+      font-family: Georgia, serif;
+      font-size: 30px;
+      line-height: 1;
+      font-weight: 300;
+    }
+    .species-score span { font-size: 13px; color: rgba(255,255,255,0.62); }
+
+    .bar-wrap { width: 100%; height: 3px; background: rgba(255,255,255,0.11); border-radius: 999px; overflow: hidden; margin-bottom: 13px; }
+    .bar { height: 100%; border-radius: 999px; background: linear-gradient(90deg, rgba(129,140,248,0.95), rgba(251,191,36,0.96)); }
+
+    .species-card p { margin: 0; color: rgba(255,255,255,0.64); font-size: 12px; line-height: 1.8; }
+
+    .chips { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 10px; padding-top: 4px; }
+    .chip { border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.52); border-radius: 999px; padding: 10px 14px; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; line-height: 1.4; }
+
+    .image-side { height: 100%; display: flex; align-items: center; }
+    .image-frame { width: 100%; max-height: calc(100vh - clamp(110px, 16vh, 126px) - clamp(18px, 3vh, 28px)); aspect-ratio: 16 / 9; padding: 12px; }
+    .image-stage { position: relative; width: 100%; height: 100%; border-radius: var(--inner); overflow: hidden; background: rgba(0,0,0,0.18); display: flex; align-items: center; justify-content: center; padding: 0; }
+    .image-stage img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .stage-badge { position: absolute; top: 16px; right: 16px; border: 1px solid rgba(255,255,255,0.12); background: rgba(0,0,0,0.42); border-radius: 999px; padding: 9px 14px; display: flex; align-items: center; gap: 7px; font-size: 10px; letter-spacing: 0.12em; }
+    .download-btn { position: absolute; right: 16px; bottom: 16px; border: 0; border-radius: 999px; background: white; color: black; padding: 12px 18px; display: flex; align-items: center; gap: 8px; font-size: 10px; letter-spacing: 0.16em; font-weight: 700; }
+
+    .modal-root { position: fixed; inset: 0; display: none; z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+    .modal-root.show { display: flex; }
+    .modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.68); backdrop-filter: blur(8px); }
+    .modal-card { position: relative; width: min(92vw, 680px); max-height: 86vh; overflow-y: auto; padding: 28px; background: var(--panel-strong); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 30px 90px rgba(0,0,0,0.52); }
+    .modal-card::-webkit-scrollbar { width: 5px; }
+    .modal-card::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.22); border-radius: 999px; }
+    .modal-close { position: absolute; top: 18px; right: 18px; border: 0; background: transparent; color: rgba(255,255,255,0.48); width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; }
+    .modal-close:hover { color: white; }
+    .modal-label { margin: 0 0 12px; color: rgba(251,191,36,0.75); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; }
+    .modal-title { margin: 0; font-size: 30px; font-weight: 300; letter-spacing: 0.16em; line-height: 1.55; }
+    .modal-latin { margin: 0 0 18px; color: rgba(255,255,255,0.42); font-size: 12px; letter-spacing: 0.12em; font-style: italic; text-transform: none; line-height: 1.8; }
+    .modal-species-image { width: 100%; margin: 0 0 18px; border-radius: 18px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.22); aspect-ratio: 16 / 9; }
+    .modal-species-image img { width: 100%; height: 100%; display: block; object-fit: cover; }
+    .info-box { border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.055); border-radius: 22px; padding: 18px; margin: 14px 0; }
+    .info-box h4 { margin: 0 0 10px; color: rgba(165,180,252,0.9); font-size: 11px; letter-spacing: 0.18em; }
+    .info-box p { margin: 0; color: rgba(255,255,255,0.78); font-size: 14px; line-height: 2; }
+    .feature-list { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+    .feature { border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); border-radius: 16px; padding: 12px; text-align: center; color: rgba(255,255,255,0.72); font-size: 13px; line-height: 1.6; }
+
+    .form-row { margin-bottom: 16px; }
+    .form-row label { display: block; margin-bottom: 8px; color: rgba(255,255,255,0.55); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; }
+    .input, .select { width: 100%; height: 44px; border: 1px solid rgba(255,255,255,0.12); border-radius: 999px; background: rgba(0,0,0,0.42); color: white; outline: 0; padding: 0 16px; font-size: 14px; }
+    .input:focus, .select:focus { border-color: rgba(129,140,248,0.9); }
+    .modal-actions { display: flex; gap: 12px; margin-top: 18px; }
+    .action-btn { flex: 1; height: 44px; border: 0; border-radius: 999px; font-size: 12px; letter-spacing: 0.12em; font-weight: 700; }
+    .secondary { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.1); }
+    .primary { background: white; color: black; }
+    .status { display: none; margin-top: 14px; padding: 12px; border-radius: 16px; border: 1px solid rgba(251,191,36,0.14); background: rgba(251,191,36,0.09); color: rgba(254,243,199,0.92); font-size: 11px; line-height: 1.7; white-space: pre-wrap; }
+    .status.show { display: block; }
+
+    .error-banner {
+      display: none;
+      position: fixed;
+      left: 18px;
+      right: 18px;
+      bottom: 18px;
+      z-index: 200;
+      background: rgba(127, 29, 29, 0.92);
+      border: 1px solid rgba(252, 165, 165, 0.25);
+      border-radius: 18px;
+      padding: 14px 16px;
+      color: white;
+      font-size: 13px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+    }
+    .error-banner.show { display: block; }
+
+    @media (max-width: 1180px) {
+      .topbar { padding: 22px 24px 12px; }
+      .title h1 { font-size: clamp(22px, 3vw, 32px); letter-spacing: 0.12em; }
+      .title p { font-size: clamp(10px, 1.3vw, 13px); letter-spacing: 0.1em; }
+
+      .draw-screen {
+        height: 100vh;
+        padding: clamp(118px, 15vh, 150px) 20px max(18px, env(safe-area-inset-bottom));
+      }
+
+      .draw-wrap {
+        height: 100%;
+        min-height: 0;
+        display: grid;
+        grid-template-rows: minmax(0, 1fr) auto;
+        gap: clamp(12px, 2vh, 20px);
+      }
+
+      .canvas-frame {
+        width: min(88vw, calc((100vh - clamp(118px, 15vh, 150px) - 108px) * 16 / 9));
+        max-height: calc(100vh - clamp(118px, 15vh, 150px) - 108px);
+      }
+
+      .toolbar {
+        max-width: calc(100vw - 28px);
+        overflow-x: auto;
+        gap: 8px;
+      }
+
+      .tool-btn {
+        width: clamp(38px, 5vw, 44px);
+        height: clamp(38px, 5vw, 44px);
+      }
+
+      .generate-btn { min-width: clamp(96px, 14vw, 116px); }
+
+      .results-screen {
+        height: 100vh;
+        padding: clamp(108px, 14vh, 128px) 20px max(18px, env(safe-area-inset-bottom));
+      }
+
+      .results-grid {
+        height: 100%;
+        display: grid;
+        grid-template-columns: 1fr;
+        grid-template-rows: minmax(0, 1fr) auto;
+        gap: 18px;
+      }
+
+      .left-panel {
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+        overflow-y: auto;
+        padding-right: 6px;
+      }
+
+      .image-side {
+        width: 100%;
+        height: auto;
+        display: block;
+      }
+
+      .image-frame {
+        width: min(88vw, 760px);
+        margin: 0 auto;
+        max-height: 32vh;
+      }
+
+      .summary-row {
+        grid-template-columns: 190px 1px minmax(0, 1fr);
+        gap: 18px;
+      }
+
+      .score-number { font-size: 104px; }
+      .score-number span { font-size: 32px; }
+
+      .species-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .feature-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 820px) {
+      .topbar { padding: 18px 18px 10px; gap: 14px; }
+      .title h1 { font-size: clamp(20px, 4.3vw, 28px); letter-spacing: 0.1em; }
+      .title p { font-size: clamp(9px, 2vw, 12px); letter-spacing: 0.08em; }
+      .pill-btn { padding: 10px 13px; }
+      .pill-btn span:not(.icon) { display: none; }
+
+      .draw-screen { padding: 104px 14px max(14px, env(safe-area-inset-bottom)); }
+
+      .canvas-frame {
+        width: 94vw;
+        max-height: calc(100vh - 104px - 98px);
+      }
+
+      .toolbar {
+        transform: scale(0.96);
+        transform-origin: center;
+        max-width: calc(100vw - 16px);
+      }
+
+      .tool-btn {
+        width: 38px;
+        height: 38px;
+      }
+
+      .generate-btn {
+        min-width: 92px;
+        height: 38px;
+        padding: 0 18px;
+        font-size: 11px;
+      }
+
+      .results-screen { padding: 100px 14px max(14px, env(safe-area-inset-bottom)); }
+      .results-grid { grid-template-rows: minmax(0, 1fr) auto; }
+
+      .summary-row {
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+
+      .vertical-line { width: 100%; height: 1px; }
+      .summary-card { padding: 22px; }
+
+      .score-number { font-size: 88px; }
+      .score-number span { font-size: 28px; }
+
+      .species-grid { grid-template-columns: 1fr; }
+      .species-card { min-height: 150px; }
+
+      .image-frame {
+        width: 94vw;
+        max-height: 28vh;
+      }
+
+      .stage-badge {
+        top: 12px;
+        right: 12px;
+        font-size: 9px;
+        padding: 7px 11px;
+      }
+
+      .download-btn {
+        right: 12px;
+        bottom: 12px;
+        padding: 10px 14px;
+        font-size: 9px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .topbar { padding: 16px 14px 8px; }
+
+      .title h1 {
+        font-size: 19px;
+        line-height: 1.45;
+      }
+
+      .title p {
+        font-size: 9px;
+        line-height: 1.5;
+      }
+
+      .draw-screen { padding-top: 94px; }
+
+      .canvas-frame {
+        width: 95vw;
+        max-height: calc(100vh - 94px - 94px);
+      }
+
+      .toolbar {
+        gap: 5px;
+        padding: 8px 10px;
+        transform: scale(0.94);
+      }
+
+      .tool-btn {
+        width: 36px;
+        height: 36px;
+      }
+
+      .divider {
+        height: 20px;
+        margin: 0;
+      }
+
+      .generate-btn {
+        min-width: 86px;
+        height: 36px;
+        padding: 0 14px;
+      }
+
+      .results-screen { padding-top: 92px; }
+
+      .score-number { font-size: 76px; }
+      .score-number span { font-size: 24px; }
+
+      .modal-card {
+        width: 94vw;
+        padding: 22px;
+      }
+
+      .feature-list { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-mesh"></div>
+  <div class="scan"></div>
+
+  <div class="app">
+    <header class="topbar">
+      <div class="title">
+        <h1>寒武纪海洋巨型生物科普装置</h1>
+        <p>Cambrian Marine Giant Organisms Popular Science Installation</p>
+      </div>
+      <button class="pill-btn" id="settingsBtn" type="button"><span class="icon" data-icon="settings"></span><span>GEMINI API</span></button>
+    </header>
+
+    <section id="drawScreen" class="screen draw-screen active">
+      <div class="draw-wrap">
+        <div id="canvasFrame" class="glass canvas-frame">
+          <div class="canvas-inner">
+            <canvas id="drawCanvas"></canvas>
+            <div class="generating-overlay">
+              <div class="sparkle-ring"><span class="icon" data-icon="sparkles"></span></div>
+              <div style="font-size:12px;letter-spacing:.32em;font-weight:700;">正在调用 AI 引擎重构画像</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="toolbar" class="glass toolbar">
+          <button class="tool-btn" id="rectBtn" type="button" title="矩形"><span class="icon" data-icon="square"></span></button>
+          <button class="tool-btn" id="circleBtn" type="button" title="椭圆"><span class="icon" data-icon="circle"></span></button>
+          <button class="tool-btn" id="triangleBtn" type="button" title="三角形"><span class="icon" data-icon="triangle"></span></button>
+          <div class="divider"></div>
+          <button class="tool-btn active" id="penBtn" type="button" title="画笔"><span class="icon" data-icon="pen"></span></button>
+          <button class="tool-btn" id="eraserBtn" type="button" title="橡皮擦"><span class="icon" data-icon="eraser"></span></button>
+          <div class="divider"></div>
+          <button class="tool-btn" id="clearBtn" type="button" title="清空"><span class="icon" data-icon="trash"></span></button>
+          <button class="generate-btn" id="generateBtn" type="button" disabled>AI 生成</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="resultsScreen" class="screen results-screen">
+      <div class="results-grid">
+        <div class="left-panel">
+          <button class="back-btn" id="resetBtn" type="button"><span class="icon" data-icon="back"></span>返回重绘</button>
+          <div class="glass summary-card">
+            <div class="summary-row">
+              <div>
+                <div class="score-number"><span id="topScore">--</span><span>%</span></div>
+                <div class="score-caption">最高形态相似度</div>
+              </div>
+              <div class="vertical-line"></div>
+              <div>
+                <h2 id="topName">--</h2>
+                <div id="topLatin" class="latin">--</div>
+                <p id="topConclusion" class="conclusion"></p>
+              </div>
+            </div>
+          </div>
+          <div id="speciesGrid" class="glass species-grid"></div>
+        </div>
+
+        <div class="image-side">
+          <div class="glass image-frame">
+            <div class="image-stage">
+              <img id="resultImage" alt="AI 生成的寒武纪生物画像" />
+              <button class="download-btn" id="downloadBtn" type="button"><span class="icon" data-icon="download"></span>下载最终图</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div id="settingsModal" class="modal-root">
+    <div class="modal-backdrop" data-close="settingsModal"></div>
+    <div class="modal-card">
+      <button class="modal-close" type="button" data-close="settingsModal"><span class="icon" data-icon="close"></span></button>
+      <p class="modal-label">Gemini API</p>
+      <h3 class="modal-title">接口设置</h3>
+      <div class="form-row" style="margin-top:18px;">
+        <label for="apiKeyInput">API Key</label>
+        <input id="apiKeyInput" class="input" type="password" placeholder="粘贴 Google AI Studio API Key" />
+      </div>
+      <div class="form-row">
+        <label for="modelSelect">Image Model</label>
+        <select id="modelSelect" class="select"></select>
+      </div>
+      <div class="modal-actions">
+        <button class="action-btn secondary" id="testKeyBtn" type="button">测试 Key</button>
+        <button class="action-btn primary" id="saveSettingsBtn" type="button">保存</button>
+      </div>
+      <div id="apiStatus" class="status"></div>
+    </div>
+  </div>
+
+  <div id="speciesModal" class="modal-root">
+    <div class="modal-backdrop" data-close="speciesModal"></div>
+    <div class="modal-card">
+      <button class="modal-close" type="button" data-close="speciesModal"><span class="icon" data-icon="close"></span></button>
+      <p class="modal-label">形态知识卡片</p>
+      <h3 id="modalSpeciesName" class="modal-title"></h3>
+      <p id="modalSpeciesLatin" class="modal-latin"></p>
+      <div class="modal-species-image">
+        <img id="modalSpeciesImage" alt="" />
+      </div>
+      <div class="info-box">
+        <h4>判断依据</h4>
+        <p id="modalSpeciesBasis"></p>
+      </div>
+      <div class="info-box">
+        <h4 style="color:rgba(251,191,36,.86);">科普知识</h4>
+        <p id="modalSpeciesKnowledge"></p>
+      </div>
+      <div id="modalSpeciesFeatures" class="feature-list"></div>
+    </div>
+  </div>
+
+  <div id="downloadModal" class="modal-root">
+    <div class="modal-backdrop" data-close="downloadModal"></div>
+    <div class="modal-card" style="max-width:460px;">
+      <button class="modal-close" type="button" data-close="downloadModal"><span class="icon" data-icon="close"></span></button>
+      <p class="modal-label">Download</p>
+      <h3 class="modal-title">下载最终图像</h3>
+      <div style="margin:18px 0;border:1px solid rgba(255,255,255,.1);border-radius:20px;overflow:hidden;background:rgba(0,0,0,.35);aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;">
+        <img id="downloadPreview" alt="下载预览" style="max-width:100%;max-height:100%;object-fit:contain;" />
+      </div>
+      <button class="action-btn primary" id="downloadConfirmBtn" type="button" style="width:100%;">下载到电脑</button>
+    </div>
+  </div>
+
+  <div id="errorBanner" class="error-banner"></div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var ICONS = {
+        settings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.2a2 2 0 0 1-1 1.7l-.4.2a2 2 0 0 1-2 0l-.2-.1a2 2 0 0 0-2.7.7l-.2.4a2 2 0 0 0 .7 2.7l.2.1a2 2 0 0 1 1 1.7v.5a2 2 0 0 1-1 1.7l-.2.1a2 2 0 0 0-.7 2.7l.2.4a2 2 0 0 0 2.7.7l.2-.1a2 2 0 0 1 2 0l.4.2a2 2 0 0 1 1 1.7v.2a2 2 0 0 0 2 2h.4a2 2 0 0 0 2-2v-.2a2 2 0 0 1 1-1.7l.4-.2a2 2 0 0 1 2 0l.2.1a2 2 0 0 0 2.7-.7l.2-.4a2 2 0 0 0-.7-2.7l-.2-.1a2 2 0 0 1-1-1.7v-.5a2 2 0 0 1 1-1.7l.2-.1a2 2 0 0 0 .7-2.7l-.2-.4a2 2 0 0 0-2.7-.7l-.2.1a2 2 0 0 1-2 0l-.4-.2a2 2 0 0 1-1-1.7V4a2 2 0 0 0-2-2Z"/><circle cx="12" cy="12" r="3"/></svg>',
+        sparkles: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3Z"/></svg>',
+        download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>',
+        close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>',
+        back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>',
+        square: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>',
+        circle: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/></svg>',
+        triangle: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4 21 20H3L12 4Z"/></svg>',
+        pen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19 7-7 3 3-7 7-3-3Z"/><path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18l5-5Z"/></svg>',
+        eraser: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m7 21-4.3-4.3a2.4 2.4 0 0 1 0-3.4l9.6-9.6a2.4 2.4 0 0 1 3.4 0l5.6 5.6a2.4 2.4 0 0 1 0 3.4L13 21"/><path d="M22 21H7"/></svg>',
+        trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>'
+      };
+
+      var MODELS = [
+        { id: "gemini-3.1-flash-image-preview", label: "Gemini 3.1 Flash Image Preview" },
+        { id: "gemini-2.5-flash-image", label: "Gemini 2.5 Flash Image" }
+      ];
+
+      var SPECIES = [
+        { name: "筛状奇虾", latin: "Tamisiocaris borealis", image: "物种说明页图片/筛状奇虾3.png", base: 92, targetRatio: 2.6, densityTarget: 0.08, traits: "筛状前附肢、流线体轴、侧翼游泳叶", basis: "若生成画像出现细密梳齿状前附肢、柔和滤食姿态与横向游动体轴，则与筛状奇虾相似度最高。", knowledge: "筛状奇虾可作为寒武纪大型滤食性放射齿类的代表。它的前附肢可被理解为筛网或梳齿结构，用来表现早期海洋生态中不同摄食方式的分化。", features: ["滤食型前附肢", "横向游动姿态", "侧翼推进", "柔性分节躯干"] },
+        { name: "似皮托虫", latin: "Parapeytoia yunnanensis", image: "物种说明页图片/似皮托虫3.png", base: 88, targetRatio: 1.45, densityTarget: 0.10, traits: "圆形口器、漂浮体态、柔性侧叶", basis: "若生成画像前端结构集中、身体较圆润、整体呈漂浮感，并带有环形口器暗示，则更接近似皮托虫。", knowledge: "似皮托虫适合说明放射齿类之间的形态差异：同样具备游泳侧叶和前端摄食结构，但整体观感比典型奇虾更圆润、更漂浮。", features: ["环形口器", "圆润头部", "漂浮姿态", "侧叶舒展"] },
+        { name: "宣扬爪虫", latin: "Kerygmachela kierkegaardi", image: "物种说明页图片/宣扬爪虫3.png", base: 84, targetRatio: 0.95, densityTarget: 0.13, traits: "柔软躯体、短足状附肢、爬行轮廓", basis: "若生成画像主体较短厚，附肢像柔软足状突起，运动感偏爬行而非高速游动，则接近宣扬爪虫方向。", knowledge: "宣扬爪虫类形态可用于科普寒武纪柔软身体动物的多样性。它们常被表现为柔软、分节、带足状附肢的早期海洋生命形象。", features: ["柔软躯体", "足状附肢", "分节轮廓", "低速运动"] },
+        { name: "厌恶虫", latin: "Pambdelurion whittingtoni", image: "物种说明页图片/厌恶虫3.png", base: 82, targetRatio: 1.85, densityTarget: 0.15, traits: "刺状背部、细长身体、成排附肢", basis: "若生成画像出现细长身体、成排足状结构或刺状轮廓，整体带有奇异不对称感，则与厌恶虫方向更接近。", knowledge: "厌恶虫是寒武纪奇特身体构型的典型符号，适合在互动装置中表达早期动物演化中大量非常规、实验性的身体方案。", features: ["刺状背部", "细长体轴", "成排附肢", "奇异轮廓"] },
+        { name: "帚状奇虾", latin: "Anomalocaris saron", image: "物种说明页图片/帚状奇虾3.png", base: 86, targetRatio: 2.2, densityTarget: 0.12, traits: "刷状前附肢、轻盈侧叶、展开姿态", basis: "若生成画像前部附肢呈扫帚状或羽毛状展开，轮廓轻盈，适合判断为帚状奇虾方向。", knowledge: "帚状奇虾适合表现放射齿类前附肢的功能变化。刷状或羽状结构可以帮助观众理解捕食、滤食和探测等不同生态功能。", features: ["刷状附肢", "羽状展开", "侧翼游泳", "轻盈体态"] },
+        { name: "抱怪虫", latin: "Amplectobelua symbrachiata", image: "物种说明页图片/抱怪虫3.png", base: 90, targetRatio: 2.4, densityTarget: 0.11, traits: "前端双附肢、长躯干、尾扇与游泳侧叶", basis: "若生成画像呈现明显前端双附肢、长轴身体、尾部推进结构和游泳姿态，则最接近抱怪虫式大型捕食者。", knowledge: "抱怪虫方向可作为寒武纪大型游泳捕食者的展陈核心。它强调前端抓握附肢、复眼、侧翼游泳叶和尾扇等高识别度形态。", features: ["前端双附肢", "大型捕食者", "尾扇", "流线型身体"] }
+      ];
+
+      var AI_IMAGE_PROMPT = [
+        "请把用户上传的黑色线稿重构为寒武纪海洋巨型生物科普装置里的艺术画像。",
+        "核心任务是形态归类与形态重塑：先根据线稿的长宽比例、前后端位置、附肢数量、附肢方向、体轴弯曲和整体轮廓，在以下六类古生物中选择最接近的一类；生成时要明显向该类古生物的真实形态靠拢，而不是照着简笔画轮廓一比一描摹。",
+        "可以保留线稿提供的头尾方向、主体位置、运动姿态和大致构图，但必须允许调整身体比例、补全缺失结构、规整附肢、增加分节、侧叶、尾扇、口器、筛齿、刷状结构或足状结构，使最终主体更像被选中的古生物。不要把错误的简笔画线条、随手画的圈、尖角或不合理突起当成必须保留的解剖结构。",
+        "只从六类目标中选择一种主导形态，不要混合成多个物种的拼贴。若线稿信息模糊，也要选择最接近的一类并生成完整、可信、可识别的该类生物。",
+        "六类形态约束：抱怪虫 Amplectobelua symbrachiata：长而流线的躯干，前端一对强壮抓握附肢，明显游泳侧叶，尾部推进结构，整体像大型游泳捕食者；筛状奇虾 Tamisiocaris borealis：细长体轴，前端成排细密筛齿或梳状滤食附肢，姿态舒展，侧叶连续，整体偏滤食型而非捕食型；帚状奇虾 Anomalocaris saron：奇虾式长体与侧叶，前端附肢呈刷状、羽状或扫帚状展开，身体轻盈，前部结构要比普通奇虾更蓬松展开；似皮托虫 Parapeytoia yunnanensis：较圆润紧凑的前部，环形口器暗示，身体不像典型长条奇虾那样过分细长，侧叶柔和舒展，整体更圆、更漂浮；宣扬爪虫 Kerygmachela kierkegaardi：柔软分节躯体，短足状或叶足状附肢，爬行感或缓慢游动感，体型较短厚，避免生成成典型奇虾；厌恶虫 Pambdelurion whittingtoni：细长身体，成排附肢或刺状/足状轮廓，轮廓奇异但有连续体轴，避免生成普通鱼形或单纯长条。",
+        "视觉风格要求保持不变：半透明、虚幻、柔焦、边缘发光、珍珠虹彩，像深海发光生物或柔和全息投影；主体不要过度具象，不要太立体，不要复杂写实背景。背景为低饱和灰蓝或雾白色。画幅横向16:9，主体完整居中并留出安全边距，不能裁切头部、尾部或附肢。不要文字、不要水印、不要标签、不要UI。"
+      ].join("");
+
+      var state = {
+        tool: "pen",
+        isDrawing: false,
+        hasDrawn: false,
+        startPoint: { x: 0, y: 0 },
+        savedImageData: null,
+        generatedImage: "",
+        report: null,
+        apiKey: "",
+        modelId: MODELS[0].id
+      };
+
+      var canvas, ctx;
+
+      function $(id) { return document.getElementById(id); }
+
+      function showError(message) {
+        var el = $("errorBanner");
+        el.textContent = message;
+        el.classList.add("show");
+        setTimeout(function () { el.classList.remove("show"); }, 9000);
+      }
+
+      window.addEventListener("error", function (event) {
+        showError("页面脚本错误：" + (event.message || "未知错误") + "\\n" + (event.filename || "") + (event.lineno ? ":" + event.lineno : ""));
+      });
+
+      window.addEventListener("unhandledrejection", function (event) {
+        var reason = event.reason;
+        showError("异步错误：" + (reason && reason.message ? reason.message : String(reason || "未知错误")));
+      });
+
+      function injectIcons() {
+        var nodes = document.querySelectorAll("[data-icon]");
+        for (var i = 0; i < nodes.length; i++) {
+          var name = nodes[i].getAttribute("data-icon");
+          nodes[i].innerHTML = ICONS[name] || "";
+        }
+        console.log("Icons injected:", nodes.length);
+      }
+
+      function openModal(id) { $(id).classList.add("show"); }
+      function closeModal(id) { $(id).classList.remove("show"); }
+
+      function showScreen(name) {
+        $("drawScreen").classList.toggle("active", name === "draw" || name === "generating");
+        $("resultsScreen").classList.toggle("active", name === "results");
+        $("canvasFrame").classList.toggle("generating", name === "generating");
+        $("toolbar").style.display = name === "draw" ? "flex" : "none";
+      }
+
+      function setTool(tool) {
+        state.tool = tool;
+        $("rectBtn").classList.toggle("active", tool === "rect");
+        $("circleBtn").classList.toggle("active", tool === "circle");
+        $("triangleBtn").classList.toggle("active", tool === "triangle");
+        $("penBtn").classList.toggle("active", tool === "pen");
+        $("eraserBtn").classList.toggle("active", tool === "eraser");
+      }
+
+      function initCanvas() {
+        canvas = $("drawCanvas");
+        canvas.width = 1024;
+        canvas.height = 768;
+        ctx = canvas.getContext("2d");
+        clearCanvas();
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+      }
+
+      function clearCanvas() {
+        if (!ctx || !canvas) return;
+        ctx.fillStyle = "#f8fafc";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        state.hasDrawn = false;
+        state.savedImageData = null;
+        $("generateBtn").disabled = true;
+      }
+
+      function getPoint(event) {
+        var e = event.touches && event.touches[0] ? event.touches[0] : event;
+        var rect = canvas.getBoundingClientRect();
+        return {
+          x: (e.clientX - rect.left) * canvas.width / rect.width,
+          y: (e.clientY - rect.top) * canvas.height / rect.height
+        };
+      }
+
+      function startDrawing(event) {
+        if (!ctx) return;
+        event.preventDefault();
+        var p = getPoint(event);
+        state.startPoint = p;
+        state.isDrawing = true;
+        state.hasDrawn = true;
+        $("generateBtn").disabled = false;
+
+        if (state.tool === "pen" || state.tool === "eraser") {
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+        } else {
+          state.savedImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        }
+      }
+
+      function moveDrawing(event) {
+        if (!state.isDrawing || !ctx) return;
+        event.preventDefault();
+        var p = getPoint(event);
+
+        if (state.tool === "pen" || state.tool === "eraser") {
+          ctx.strokeStyle = state.tool === "eraser" ? "#f8fafc" : "#111827";
+          ctx.lineWidth = state.tool === "eraser" ? 46 : 8;
+          ctx.lineTo(p.x, p.y);
+          ctx.stroke();
+          return;
+        }
+
+        if (state.savedImageData) {
+          ctx.putImageData(state.savedImageData, 0, 0);
+        }
+
+        var start = state.startPoint;
+        var width = p.x - start.x;
+        var height = p.y - start.y;
+        ctx.strokeStyle = "#111827";
+        ctx.lineWidth = 8;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.beginPath();
+
+        if (state.tool === "rect") {
+          ctx.strokeRect(start.x, start.y, width, height);
+        } else if (state.tool === "circle") {
+          ctx.ellipse(start.x + width / 2, start.y + height / 2, Math.abs(width / 2), Math.abs(height / 2), 0, 0, Math.PI * 2);
+          ctx.stroke();
+        } else if (state.tool === "triangle") {
+          ctx.moveTo(start.x + width / 2, start.y);
+          ctx.lineTo(start.x, start.y + height);
+          ctx.lineTo(start.x + width, start.y + height);
+          ctx.closePath();
+          ctx.stroke();
+        }
+      }
+
+      function endDrawing() {
+        if (ctx && (state.tool === "pen" || state.tool === "eraser")) ctx.closePath();
+        state.isDrawing = false;
+        state.savedImageData = null;
+      }
+
+      function normalizeGeminiError(model, status, data) {
+        var message = data && data.error && data.error.message ? data.error.message : "请求失败：" + status;
+        if (status === 404 || message.indexOf("not found") >= 0) return model + ": 当前项目、地区或 API 版本不支持这个图片模型。";
+        if (status === 403) return model + ": 这个 Key 没有权限，可能是项目没开通、地区不支持、Key 被限制或没有 Billing。";
+        if (status === 429) return model + ": 当前额度或短时间频率限制已达到。";
+        if (status === 503 || message.toLowerCase().indexOf("high demand") >= 0) return model + ": 模型当前高峰拥堵，请稍后再试。";
+        return model + ": " + message;
+      }
+
+      function isTemporaryError(status, message) {
+        var lower = String(message || "").toLowerCase();
+        return status === 429 || status === 503 || lower.indexOf("high demand") >= 0 || lower.indexOf("try again later") >= 0 || lower.indexOf("quota") >= 0;
+      }
+
+      function wait(ms) { return new Promise(function (resolve) { setTimeout(resolve, ms); }); }
+
+      function pickImage(parts) {
+        if (!parts || !parts.length) return null;
+        for (var i = 0; i < parts.length; i++) {
+          var part = parts[i];
+          var inline = part.inlineData || part.inline_data;
+          if (!part.thought && inline && inline.data) {
+            var mime = inline.mimeType || inline.mime_type || "image/png";
+            return "data:" + mime + ";base64," + inline.data;
+          }
+        }
+        return null;
+      }
+
+      function callGemini(model, sketchBase64, apiKey) {
+        var payload = {
+          contents: [{
+            role: "user",
+            parts: [
+              { text: AI_IMAGE_PROMPT },
+              { inlineData: { mimeType: "image/png", data: sketchBase64 } }
+            ]
+          }],
+          generationConfig: {
+            responseModalities: ["IMAGE"],
+            imageConfig: { aspectRatio: "16:9" }
+          }
+        };
+
+        return fetch("https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+          body: JSON.stringify(payload)
+        }).then(function (response) {
+          return response.json().catch(function () { return null; }).then(function (data) {
+            if (!response.ok) {
+              var raw = data && data.error && data.error.message ? data.error.message : "";
+              var err = new Error(normalizeGeminiError(model, response.status, data));
+              err.status = response.status;
+              err.temporary = isTemporaryError(response.status, raw);
+              throw err;
+            }
+            var parts = data && data.candidates && data.candidates[0] && data.candidates[0].content ? data.candidates[0].content.parts : [];
+            var imageUrl = pickImage(parts);
+            if (!imageUrl) throw new Error(model + ": 模型没有返回图片。请确认该模型支持图片输出。");
+            return { imageUrl: imageUrl, model: model };
+          });
+        });
+      }
+
+      async function generateImage(sketchBase64, apiKey, preferredModel) {
+        var models = [];
+        var rawModels = [preferredModel].concat(MODELS.map(function (m) { return m.id; }));
+        for (var i = 0; i < rawModels.length; i++) {
+          if (rawModels[i] && models.indexOf(rawModels[i]) < 0) models.push(rawModels[i]);
+        }
+        var errors = [];
+        for (var m = 0; m < models.length; m++) {
+          for (var attempt = 1; attempt <= 2; attempt++) {
+            try {
+              if (attempt > 1) await wait(1600);
+              return await callGemini(models[m], sketchBase64, apiKey);
+            } catch (err) {
+              errors.push((attempt > 1 ? "重试 " : "") + err.message);
+              if (!err.temporary) break;
+            }
+          }
+        }
+        throw new Error("AI 图片生成没有成功。\\n\\n已调用：\\n" + errors.join("\\n") + "\\n\\n如果是 high demand / 429 / 503，通常不是代码语法问题，而是模型拥堵、短时间限流或额度不足。");
+      }
+
+      function measureSketch(sourceCanvas) {
+        var c = sourceCanvas.getContext("2d");
+        var width = sourceCanvas.width;
+        var height = sourceCanvas.height;
+        var data = c.getImageData(0, 0, width, height).data;
+        var minX = width, minY = height, maxX = 0, maxY = 0, dark = 0;
+        for (var y = 0; y < height; y += 5) {
+          for (var x = 0; x < width; x += 5) {
+            var idx = (y * width + x) * 4;
+            var avg = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
+            if (avg < 210) {
+              dark++;
+              if (x < minX) minX = x;
+              if (y < minY) minY = y;
+              if (x > maxX) maxX = x;
+              if (y > maxY) maxY = y;
+            }
+          }
+        }
+        var boxW = Math.max(1, maxX - minX);
+        var boxH = Math.max(1, maxY - minY);
+        return { ratio: boxW / boxH, density: dark / Math.max(1, (boxW / 5) * (boxH / 5)) };
+      }
+
+      function buildReport(sourceCanvas, model) {
+        var metrics = measureSketch(sourceCanvas);
+
+        var scored = SPECIES.map(function (item) {
+          var ratioDiff = Math.abs(metrics.ratio - item.targetRatio);
+          var densityDiff = Math.abs(metrics.density - item.densityTarget);
+          var ratioScore = Math.max(0, 1 - ratioDiff / 1.9);
+          var densityScore = Math.max(0, 1 - densityDiff / 0.22);
+          var raw = ratioScore * 0.72 + densityScore * 0.28;
+          var score = Math.round(42 + raw * 48);
+
+          if (item.name === "筛状奇虾" && metrics.ratio > 2.15) score += 6;
+          if (item.name === "抱怪虫" && metrics.ratio > 2.0 && metrics.ratio < 3.1) score += 4;
+          if (item.name === "似皮托虫" && metrics.ratio < 1.8 && metrics.density < 0.16) score += 5;
+          if (item.name === "宣扬爪虫" && metrics.ratio < 1.25) score += 6;
+          if (item.name === "厌恶虫" && metrics.density > 0.15) score += 5;
+          if (item.name === "帚状奇虾" && metrics.ratio > 1.8 && metrics.density < 0.18) score += 4;
+
+          score = Math.min(96, Math.max(38, score));
+          var copy = {};
+          for (var key in item) copy[key] = item[key];
+          copy.score = score;
+          return copy;
+        }).sort(function (a, b) { return b.score - a.score; });
+
+        for (var i = 1; i < scored.length; i++) {
+          var maxAllowed = scored[0].score - 7 - i * 3;
+          if (scored[i].score > maxAllowed) scored[i].score = Math.max(38, maxAllowed);
+        }
+
+        return {
+          model: model,
+          species: scored,
+          selected: scored[0],
+          conclusion: "AI 生成画像与「" + scored[0].name + "」的形态相似度最高。判断依据：" + scored[0].basis
+        };
+      }
+
+      function renderReport(report) {
+        $("topScore").textContent = report.selected.score;
+        $("topName").textContent = report.selected.name;
+        $("topLatin").textContent = report.selected.latin;
+        $("topConclusion").textContent = report.conclusion;
+        $("resultImage").src = state.generatedImage;
+        $("downloadPreview").src = state.generatedImage;
+
+        var grid = $("speciesGrid");
+        grid.innerHTML = "";
+        report.species.forEach(function (item, index) {
+          var btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "species-card";
+          btn.setAttribute("data-index", String(index));
+          btn.innerHTML =
+            '<div class="species-head">' +
+              '<div><h3>' + escapeHtml(item.name) + '</h3><div class="small-latin">' + escapeHtml(item.latin) + '</div></div>' +
+              '<div class="species-score">' + item.score + '<span>%</span></div>' +
+            '</div>' +
+            '<div class="bar-wrap"><div class="bar" style="width:' + item.score + '%"></div></div>' +
+            '<p>特征：' + escapeHtml(item.traits) + '</p>';
+          btn.addEventListener("click", function () { openSpecies(item); });
+          grid.appendChild(btn);
+        });
+
+        var chips = document.createElement("div");
+        chips.className = "chips";
+        chips.innerHTML = '<div class="chip">Sketch To Image</div><div class="chip">' + escapeHtml(report.model) + '</div>';
+        grid.appendChild(chips);
+      }
+
+      function escapeHtml(text) {
+        return String(text).replace(/[&<>'"]/g, function (ch) {
+          return { "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[ch];
+        });
+      }
+
+      function openSpecies(item) {
+        $("modalSpeciesName").textContent = item.name;
+        $("modalSpeciesLatin").textContent = item.latin;
+        $("modalSpeciesImage").src = item.image;
+        $("modalSpeciesImage").alt = item.name + "说明图";
+        $("modalSpeciesBasis").textContent = item.basis;
+        $("modalSpeciesKnowledge").textContent = item.knowledge;
+        var box = $("modalSpeciesFeatures");
+        box.innerHTML = "";
+        item.features.forEach(function (feature) {
+          var div = document.createElement("div");
+          div.className = "feature";
+          div.textContent = feature;
+          box.appendChild(div);
+        });
+        openModal("speciesModal");
+      }
+
+      async function handleGenerate() {
+        if (!state.hasDrawn) return;
+        if (!state.apiKey.trim()) {
+          openModal("settingsModal");
+          return;
+        }
+        var sketchBase64 = canvas.toDataURL("image/png").split(",")[1];
+        showScreen("generating");
+        try {
+          var result = await generateImage(sketchBase64, state.apiKey.trim(), state.modelId);
+          state.generatedImage = result.imageUrl;
+          state.report = buildReport(canvas, result.model);
+          renderReport(state.report);
+          showScreen("results");
+        } catch (err) {
+          alert(err.message || "生成失败");
+          showScreen("draw");
+        }
+      }
+
+      function resetFlow() {
+        state.generatedImage = "";
+        state.report = null;
+        state.hasDrawn = false;
+        showScreen("draw");
+        initCanvas();
+        $("generateBtn").disabled = true;
+      }
+
+      function loadSettings() {
+        state.apiKey = localStorage.getItem("paleo_gemini_api_key") || "";
+        state.modelId = localStorage.getItem("paleo_gemini_model") || MODELS[0].id;
+        $("apiKeyInput").value = state.apiKey;
+        var select = $("modelSelect");
+        select.innerHTML = "";
+        MODELS.forEach(function (model) {
+          var option = document.createElement("option");
+          option.value = model.id;
+          option.textContent = model.label;
+          select.appendChild(option);
+        });
+        select.value = state.modelId;
+      }
+
+      function saveSettings() {
+        state.apiKey = $("apiKeyInput").value.trim();
+        state.modelId = $("modelSelect").value;
+        localStorage.setItem("paleo_gemini_api_key", state.apiKey);
+        localStorage.setItem("paleo_gemini_model", state.modelId);
+        closeModal("settingsModal");
+      }
+
+      async function testApiKey() {
+        var status = $("apiStatus");
+        var key = $("apiKeyInput").value.trim();
+        status.classList.add("show");
+        if (!key) {
+          status.textContent = "请先填写 Gemini API Key。";
+          return;
+        }
+        status.textContent = "正在检查 Gemini API Key...";
+        try {
+          var response = await fetch("https://generativelanguage.googleapis.com/v1beta/models", {
+            headers: { "x-goog-api-key": key }
+          });
+          var data = await response.json().catch(function () { return null; });
+          if (!response.ok) throw new Error(data && data.error && data.error.message ? data.error.message : "检查失败：" + response.status);
+          var modelNames = (data && data.models ? data.models : []).map(function (m) { return String(m.name || "").replace("models/", ""); });
+          var usable = MODELS.filter(function (m) { return modelNames.indexOf(m.id) >= 0; }).map(function (m) { return m.id; });
+          status.textContent = usable.length ? "可用图片模型：" + usable.join(" / ") : "Key 可读取模型列表，但没有看到预设图片模型。请检查项目权限、地区或 Billing。";
+        } catch (err) {
+          status.textContent = err.message || "检查失败。";
+        }
+      }
+
+      function downloadImage() {
+        if (!state.generatedImage) return;
+        var a = document.createElement("a");
+        a.download = "cambrian-ai-image.png";
+        a.href = state.generatedImage;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
+
+      function bindEvents() {
+        $("settingsBtn").addEventListener("click", function () { openModal("settingsModal"); });
+        $("rectBtn").addEventListener("click", function () { setTool("rect"); });
+        $("circleBtn").addEventListener("click", function () { setTool("circle"); });
+        $("triangleBtn").addEventListener("click", function () { setTool("triangle"); });
+        $("penBtn").addEventListener("click", function () { setTool("pen"); });
+        $("eraserBtn").addEventListener("click", function () { setTool("eraser"); });
+        $("clearBtn").addEventListener("click", clearCanvas);
+        $("generateBtn").addEventListener("click", handleGenerate);
+        $("resetBtn").addEventListener("click", resetFlow);
+        $("saveSettingsBtn").addEventListener("click", saveSettings);
+        $("testKeyBtn").addEventListener("click", testApiKey);
+        $("downloadBtn").addEventListener("click", function () { openModal("downloadModal"); });
+        $("downloadConfirmBtn").addEventListener("click", downloadImage);
+
+        var closers = document.querySelectorAll("[data-close]");
+        for (var i = 0; i < closers.length; i++) {
+          closers[i].addEventListener("click", function () { closeModal(this.getAttribute("data-close")); });
+        }
+
+        canvas.addEventListener("mousedown", startDrawing);
+        canvas.addEventListener("mousemove", moveDrawing);
+        canvas.addEventListener("mouseup", endDrawing);
+        canvas.addEventListener("mouseleave", endDrawing);
+        canvas.addEventListener("touchstart", startDrawing, { passive: false });
+        canvas.addEventListener("touchmove", moveDrawing, { passive: false });
+        canvas.addEventListener("touchend", endDrawing);
+      }
+
+      function runSelfTests() {
+        console.assert(MODELS.length >= 2, "TEST: 应至少有两个模型用于切换/备用");
+        console.assert(SPECIES.length === 6, "TEST: 必须只比对六种目标生物");
+        console.assert(SPECIES.some(function (item) { return item.name === "宣扬爪虫"; }), "TEST: 必须包含宣扬爪虫");
+        console.assert(!SPECIES.some(function (item) { return item.name === "初传爪虫"; }), "TEST: 不应再包含初传爪虫");
+        console.assert(typeof buildReport === "function", "TEST: buildReport 必须存在");
+        console.assert(typeof escapeHtml("<x>") === "string", "TEST: escapeHtml 必须返回字符串");
+
+        var canvasForTest = document.createElement("canvas");
+        canvasForTest.width = 100;
+        canvasForTest.height = 100;
+        var testCtx = canvasForTest.getContext("2d");
+        testCtx.fillStyle = "#fff";
+        testCtx.fillRect(0, 0, 100, 100);
+        testCtx.strokeStyle = "#000";
+        testCtx.lineWidth = 4;
+        testCtx.beginPath();
+        testCtx.moveTo(10, 50);
+        testCtx.lineTo(90, 50);
+        testCtx.stroke();
+
+        var report = buildReport(canvasForTest, "test-model");
+        console.assert(report.species.length === 6, "TEST: 报告必须输出六种生物");
+        console.assert(report.selected && report.selected.score >= report.species[5].score, "TEST: selected 必须是最高分");
+        console.assert(report.species[0].score - report.species[5].score >= 18, "TEST: 相似度分数必须拉开差距，不能全部九十多");
+        console.assert(document.getElementById("rectBtn") && document.getElementById("circleBtn") && document.getElementById("triangleBtn"), "TEST: 三个形状工具按钮必须存在");
+        console.log("Self tests passed: Cambrian page runtime helpers are ready.");
+      }
+
+      function init() {
+        console.log("Cambrian page init started");
+        injectIcons();
+        initCanvas();
+        loadSettings();
+        bindEvents();
+        runSelfTests();
+        showScreen("draw");
+      }
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", init);
+      } else {
+        init();
+      }
+    })();
+  </script>
+</body>
+</html>
