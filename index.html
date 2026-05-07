@@ -447,8 +447,8 @@
     .modal-label { margin: 0 0 12px; color: rgba(251,191,36,0.75); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; }
     .modal-title { margin: 0; font-size: 30px; font-weight: 300; letter-spacing: 0.16em; line-height: 1.55; }
     .modal-latin { margin: 0 0 18px; color: rgba(255,255,255,0.42); font-size: 12px; letter-spacing: 0.12em; font-style: italic; text-transform: none; line-height: 1.8; }
-    .modal-species-image { width: 100%; margin: 0 0 18px; border-radius: 18px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.22); aspect-ratio: 16 / 9; }
-    .modal-species-image img { width: 100%; height: 100%; display: block; object-fit: cover; }
+    .modal-species-image { width: 100%; margin: 0 0 18px; border-radius: 18px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.22); }
+    .modal-species-image img { width: 100%; height: auto; max-height: min(62vh, 620px); display: block; object-fit: contain; }
     .info-box { border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.055); border-radius: 22px; padding: 18px; margin: 14px 0; }
     .info-box h4 { margin: 0 0 10px; color: rgba(165,180,252,0.9); font-size: 11px; letter-spacing: 0.18em; }
     .info-box p { margin: 0; color: rgba(255,255,255,0.78); font-size: 14px; line-height: 2; }
@@ -845,12 +845,12 @@
       ];
 
       var SPECIES = [
-        { name: "筛状奇虾", latin: "Tamisiocaris borealis", image: "物种说明页图片/筛状奇虾3.png", base: 92, targetRatio: 2.6, densityTarget: 0.08, traits: "筛状前附肢、流线体轴、侧翼游泳叶", basis: "若生成画像出现细密梳齿状前附肢、柔和滤食姿态与横向游动体轴，则与筛状奇虾相似度最高。", knowledge: "筛状奇虾可作为寒武纪大型滤食性放射齿类的代表。它的前附肢可被理解为筛网或梳齿结构，用来表现早期海洋生态中不同摄食方式的分化。", features: ["滤食型前附肢", "横向游动姿态", "侧翼推进", "柔性分节躯干"] },
-        { name: "似皮托虫", latin: "Parapeytoia yunnanensis", image: "物种说明页图片/似皮托虫3.png", base: 88, targetRatio: 1.45, densityTarget: 0.10, traits: "圆形口器、漂浮体态、柔性侧叶", basis: "若生成画像前端结构集中、身体较圆润、整体呈漂浮感，并带有环形口器暗示，则更接近似皮托虫。", knowledge: "似皮托虫适合说明放射齿类之间的形态差异：同样具备游泳侧叶和前端摄食结构，但整体观感比典型奇虾更圆润、更漂浮。", features: ["环形口器", "圆润头部", "漂浮姿态", "侧叶舒展"] },
-        { name: "宣扬爪虫", latin: "Kerygmachela kierkegaardi", image: "物种说明页图片/宣扬爪虫3.png", base: 84, targetRatio: 0.95, densityTarget: 0.13, traits: "柔软躯体、短足状附肢、爬行轮廓", basis: "若生成画像主体较短厚，附肢像柔软足状突起，运动感偏爬行而非高速游动，则接近宣扬爪虫方向。", knowledge: "宣扬爪虫类形态可用于科普寒武纪柔软身体动物的多样性。它们常被表现为柔软、分节、带足状附肢的早期海洋生命形象。", features: ["柔软躯体", "足状附肢", "分节轮廓", "低速运动"] },
-        { name: "厌恶虫", latin: "Pambdelurion whittingtoni", image: "物种说明页图片/厌恶虫3.png", base: 82, targetRatio: 1.85, densityTarget: 0.15, traits: "刺状背部、细长身体、成排附肢", basis: "若生成画像出现细长身体、成排足状结构或刺状轮廓，整体带有奇异不对称感，则与厌恶虫方向更接近。", knowledge: "厌恶虫是寒武纪奇特身体构型的典型符号，适合在互动装置中表达早期动物演化中大量非常规、实验性的身体方案。", features: ["刺状背部", "细长体轴", "成排附肢", "奇异轮廓"] },
-        { name: "帚状奇虾", latin: "Anomalocaris saron", image: "物种说明页图片/帚状奇虾3.png", base: 86, targetRatio: 2.2, densityTarget: 0.12, traits: "刷状前附肢、轻盈侧叶、展开姿态", basis: "若生成画像前部附肢呈扫帚状或羽毛状展开，轮廓轻盈，适合判断为帚状奇虾方向。", knowledge: "帚状奇虾适合表现放射齿类前附肢的功能变化。刷状或羽状结构可以帮助观众理解捕食、滤食和探测等不同生态功能。", features: ["刷状附肢", "羽状展开", "侧翼游泳", "轻盈体态"] },
-        { name: "抱怪虫", latin: "Amplectobelua symbrachiata", image: "物种说明页图片/抱怪虫3.png", base: 90, targetRatio: 2.4, densityTarget: 0.11, traits: "前端双附肢、长躯干、尾扇与游泳侧叶", basis: "若生成画像呈现明显前端双附肢、长轴身体、尾部推进结构和游泳姿态，则最接近抱怪虫式大型捕食者。", knowledge: "抱怪虫方向可作为寒武纪大型游泳捕食者的展陈核心。它强调前端抓握附肢、复眼、侧翼游泳叶和尾扇等高识别度形态。", features: ["前端双附肢", "大型捕食者", "尾扇", "流线型身体"] }
+        { name: "筛状奇虾", latin: "Tamisiocaris borealis", image: "物种说明页图片/筛状奇虾.png", base: 92, targetRatio: 2.6, densityTarget: 0.08, traits: "筛状前附肢、流线体轴、侧翼游泳叶", basis: "若生成画像出现细密梳齿状前附肢、柔和滤食姿态与横向游动体轴，则与筛状奇虾相似度最高。", knowledge: "筛状奇虾可作为寒武纪大型滤食性放射齿类的代表。它的前附肢可被理解为筛网或梳齿结构，用来表现早期海洋生态中不同摄食方式的分化。", features: ["滤食型前附肢", "横向游动姿态", "侧翼推进", "柔性分节躯干"] },
+        { name: "似皮托虫", latin: "Parapeytoia yunnanensis", image: "物种说明页图片/似皮托虫.png", base: 88, targetRatio: 1.45, densityTarget: 0.10, traits: "圆形口器、漂浮体态、柔性侧叶", basis: "若生成画像前端结构集中、身体较圆润、整体呈漂浮感，并带有环形口器暗示，则更接近似皮托虫。", knowledge: "似皮托虫适合说明放射齿类之间的形态差异：同样具备游泳侧叶和前端摄食结构，但整体观感比典型奇虾更圆润、更漂浮。", features: ["环形口器", "圆润头部", "漂浮姿态", "侧叶舒展"] },
+        { name: "宣扬爪虫", latin: "Kerygmachela kierkegaardi", image: "物种说明页图片/宣扬爪虫.png", base: 84, targetRatio: 0.95, densityTarget: 0.13, traits: "柔软躯体、短足状附肢、爬行轮廓", basis: "若生成画像主体较短厚，附肢像柔软足状突起，运动感偏爬行而非高速游动，则接近宣扬爪虫方向。", knowledge: "宣扬爪虫类形态可用于科普寒武纪柔软身体动物的多样性。它们常被表现为柔软、分节、带足状附肢的早期海洋生命形象。", features: ["柔软躯体", "足状附肢", "分节轮廓", "低速运动"] },
+        { name: "厌恶虫", latin: "Pambdelurion whittingtoni", image: "物种说明页图片/厌恶虫.png", base: 82, targetRatio: 1.85, densityTarget: 0.15, traits: "刺状背部、细长身体、成排附肢", basis: "若生成画像出现细长身体、成排足状结构或刺状轮廓，整体带有奇异不对称感，则与厌恶虫方向更接近。", knowledge: "厌恶虫是寒武纪奇特身体构型的典型符号，适合在互动装置中表达早期动物演化中大量非常规、实验性的身体方案。", features: ["刺状背部", "细长体轴", "成排附肢", "奇异轮廓"] },
+        { name: "帚状奇虾", latin: "Anomalocaris saron", image: "物种说明页图片/帚状奇虾.png", base: 86, targetRatio: 2.2, densityTarget: 0.12, traits: "刷状前附肢、轻盈侧叶、展开姿态", basis: "若生成画像前部附肢呈扫帚状或羽毛状展开，轮廓轻盈，适合判断为帚状奇虾方向。", knowledge: "帚状奇虾适合表现放射齿类前附肢的功能变化。刷状或羽状结构可以帮助观众理解捕食、滤食和探测等不同生态功能。", features: ["刷状附肢", "羽状展开", "侧翼游泳", "轻盈体态"] },
+        { name: "抱怪虫", latin: "Amplectobelua symbrachiata", image: "物种说明页图片/抱怪虫.png", base: 90, targetRatio: 2.4, densityTarget: 0.11, traits: "前端双附肢、长躯干、尾扇与游泳侧叶", basis: "若生成画像呈现明显前端双附肢、长轴身体、尾部推进结构和游泳姿态，则最接近抱怪虫式大型捕食者。", knowledge: "抱怪虫方向可作为寒武纪大型游泳捕食者的展陈核心。它强调前端抓握附肢、复眼、侧翼游泳叶和尾扇等高识别度形态。", features: ["前端双附肢", "大型捕食者", "尾扇", "流线型身体"] }
       ];
 
       var AI_IMAGE_PROMPT = [
