@@ -22,7 +22,7 @@
     }
 
     * { box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; height: 100dvh; }
+    html, body { width: 100%; min-height: 100%; }
     body {
       margin: 0;
       overflow: hidden;
@@ -432,7 +432,7 @@
     .image-side { height: 100%; display: flex; align-items: center; }
     .image-frame { width: 100%; max-height: calc(100vh - clamp(110px, 16vh, 126px) - clamp(18px, 3vh, 28px)); aspect-ratio: 16 / 9; padding: 12px; }
     .image-stage { position: relative; width: 100%; height: 100%; border-radius: var(--inner); overflow: hidden; background: rgba(0,0,0,0.18); display: flex; align-items: center; justify-content: center; padding: 0; }
-    .image-stage img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .image-stage img { width: 100%; height: 100%; object-fit: contain; display: block; }
     .stage-badge { position: absolute; top: 16px; right: 16px; border: 1px solid rgba(255,255,255,0.12); background: rgba(0,0,0,0.42); border-radius: 999px; padding: 9px 14px; display: flex; align-items: center; gap: 7px; font-size: 10px; letter-spacing: 0.12em; }
     .download-btn { position: absolute; right: 16px; bottom: 16px; border: 0; border-radius: 999px; background: white; color: black; padding: 12px 18px; display: flex; align-items: center; gap: 8px; font-size: 10px; letter-spacing: 0.16em; font-weight: 700; }
 
@@ -485,32 +485,44 @@
     .error-banner.show { display: block; }
 
     @media (max-width: 1180px) {
+      body {
+        overflow-y: auto;
+        overflow-x: hidden;
+      }
+
+      .app {
+        min-height: 100dvh;
+        height: auto;
+        overflow: visible;
+      }
+
       .topbar { padding: 22px 24px 12px; }
       .title h1 { font-size: clamp(22px, 3vw, 32px); letter-spacing: 0.12em; }
       .title p { font-size: clamp(10px, 1.3vw, 13px); letter-spacing: 0.1em; }
 
       .draw-screen {
-        height: 100vh;
+        min-height: 100dvh;
+        height: auto;
         padding: clamp(118px, 15vh, 150px) 20px max(18px, env(safe-area-inset-bottom));
       }
 
       .draw-wrap {
-        height: 100%;
-        min-height: 0;
+        min-height: calc(100dvh - clamp(118px, 15vh, 150px) - max(18px, env(safe-area-inset-bottom)));
         display: grid;
         grid-template-rows: minmax(0, 1fr) auto;
         gap: clamp(12px, 2vh, 20px);
       }
 
       .canvas-frame {
-        width: min(88vw, calc((100vh - clamp(118px, 15vh, 150px) - 108px) * 16 / 9));
-        max-height: calc(100vh - clamp(118px, 15vh, 150px) - 108px);
+        width: min(88vw, calc((100dvh - clamp(118px, 15vh, 150px) - 108px) * 16 / 9));
+        max-height: calc(100dvh - clamp(118px, 15vh, 150px) - 108px);
       }
 
       .toolbar {
         max-width: calc(100vw - 28px);
         overflow-x: auto;
         gap: 8px;
+        margin-bottom: env(safe-area-inset-bottom);
       }
 
       .tool-btn {
@@ -521,36 +533,38 @@
       .generate-btn { min-width: clamp(96px, 14vw, 116px); }
 
       .results-screen {
-        height: 100vh;
-        padding: clamp(108px, 14vh, 128px) 20px max(18px, env(safe-area-inset-bottom));
+        min-height: 100dvh;
+        height: auto;
+        padding: clamp(108px, 14vh, 128px) 20px max(24px, env(safe-area-inset-bottom));
       }
 
       .results-grid {
-        height: 100%;
+        height: auto;
         display: grid;
         grid-template-columns: 1fr;
-        grid-template-rows: minmax(0, 1fr) auto;
+        grid-template-rows: auto auto;
         gap: 18px;
       }
 
       .left-panel {
         width: 100%;
-        height: 100%;
-        min-height: 0;
-        overflow-y: auto;
-        padding-right: 6px;
+        height: auto;
+        min-height: auto;
+        overflow: visible;
+        padding-right: 0;
       }
 
       .image-side {
         width: 100%;
         height: auto;
         display: block;
+        order: -1;
       }
 
       .image-frame {
         width: min(88vw, 760px);
         margin: 0 auto;
-        max-height: 32vh;
+        max-height: none;
       }
 
       .summary-row {
@@ -576,13 +590,14 @@
 
       .canvas-frame {
         width: 94vw;
-        max-height: calc(100vh - 104px - 98px);
+        max-height: calc(100dvh - 104px - 98px);
       }
 
       .toolbar {
-        transform: scale(0.96);
-        transform-origin: center;
         max-width: calc(100vw - 16px);
+        justify-content: flex-start;
+        padding-left: 12px;
+        padding-right: 12px;
       }
 
       .tool-btn {
@@ -598,7 +613,7 @@
       }
 
       .results-screen { padding: 100px 14px max(14px, env(safe-area-inset-bottom)); }
-      .results-grid { grid-template-rows: minmax(0, 1fr) auto; }
+      .results-grid { grid-template-rows: auto auto; }
 
       .summary-row {
         grid-template-columns: 1fr;
@@ -616,7 +631,6 @@
 
       .image-frame {
         width: 94vw;
-        max-height: 28vh;
       }
 
       .stage-badge {
@@ -627,10 +641,20 @@
       }
 
       .download-btn {
+        left: 12px;
         right: 12px;
-        bottom: 12px;
+        bottom: 10px;
+        justify-content: center;
         padding: 10px 14px;
         font-size: 9px;
+      }
+
+      .image-stage {
+        padding-bottom: 52px;
+      }
+
+      .image-stage img {
+        height: calc(100% - 52px);
       }
     }
 
@@ -651,13 +675,12 @@
 
       .canvas-frame {
         width: 95vw;
-        max-height: calc(100vh - 94px - 94px);
+        max-height: calc(100dvh - 94px - 94px);
       }
 
       .toolbar {
         gap: 5px;
         padding: 8px 10px;
-        transform: scale(0.94);
       }
 
       .tool-btn {
@@ -911,6 +934,7 @@
         $("resultsScreen").classList.toggle("active", name === "results");
         $("canvasFrame").classList.toggle("generating", name === "generating");
         $("toolbar").style.display = name === "draw" ? "flex" : "none";
+        window.scrollTo({ top: 0, left: 0, behavior: "auto" });
       }
 
       function setTool(tool) {
